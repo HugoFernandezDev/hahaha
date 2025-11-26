@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Carta para Ti ❤️</title>
+
+  <!-- Google font (firma) -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS v4 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    // Tailwind config usando variables
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            rosa: "var(--rosa)",
+            rosaclaro: "var(--rosaclaro)",
+            morado: "var(--morado)",
+            blanco: "var(--blanco)",
+            accent: "var(--accent)"
+          },
+          keyframes: {
+            floaty: {
+              '0%': { transform: 'translateY(0) scale(1)', opacity: '1' },
+              '100%': { transform: 'translateY(-18px) scale(1.03)', opacity: '0.85' }
+            }
+          },
+          animation: {
+            floaty: 'floaty 4s ease-in-out infinite alternate'
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    :root {
+      --rosa: #ff6b9d;
+      --rosaclaro: #fff0f6;
+      --morado: #d8ccff;
+      --blanco: #ffffff;
+      --accent: #ff9fc1;
+    }
+
+    /* Animaciones personalizadas (corazones caen, sobre open) */
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotate(420deg); opacity: 0; }
+    }
+
+    .heart-fall {
+      animation: fall linear infinite;
+      pointer-events: none;
+    }
+
+    /* Envelope open animation helpers */
+    .envelope {
+      transform-origin: top center;
+      transition: transform 0.7s cubic-bezier(.2,.9,.3,1), opacity 0.5s;
+    }
+    .envelope.open {
+      transform: translateY(-6px) rotateX(10deg) scale(0.98);
+    }
+
+    /* overlay surprise */
+    .overlay { background: rgba(0,0,0,0.45); }
+  </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-rosaclaro via-morado to-rosa relative overflow-hidden">
+
+  <!-- CORAZONES SUAVES (sutiles arriba) -->
+  <div id="hearts-root" class="pointer-events-none"></div>
+
+  <!-- Música (no autoplay) -->
+  <audio id="musica" preload="auto">
+    <source src="{{ url_for('static', filename='audio/musica.mp3') }}" type="audio/mp3" />
+  </audio>
+
+  <!-- Botón flotante de música -->
+  <button id="btn-music" class="fixed right-6 top-6 z-50 bg-white/80 backdrop-blur-sm p-3 rounded-full shadow-lg hover:scale-105 transition"
+          title="Play / Pausa música">
+    <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-rosa" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M5 3v18l15-9z"/>
+    </svg>
+    <svg id="icon-pause" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-rosa hidden" fill="currentColor" viewBox="0 0 24 24">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+    </svg>
+  </button>
+
+  <!-- Contenedor principal -->
+  <div class="w-full max-w-4xl mx-auto text-center z-20">
+
+    <!-- Encabezado / Foto pequeña -->
+    <div class="flex items-center gap-6 justify-center mb-6">
+      <img src="{{ url_for('static', filename='img/foto.jpg') }}" alt="Foto" class="w-28 h-28 object-cover rounded-full border-4 border-white shadow-2xl">
+      <div class="text-left">
+        <h1 class="text-3xl font-bold text-rosa">Para ti, mi amor</h1>
+        <p class="text-sm text-gray-700">Un detalle hecho con lo que sé hacer — programar y sentir</p>
+      </div>
+    </div>
+
+    <!-- BOTÓN ABRIR (sobre efecto) -->
+    <div class="flex justify-center">
+      <div id="envelope-wrap" class="envelope w-[460px]">
+        <div id="envelope"
+             class="bg-white rounded-2xl shadow-2xl p-8 cursor-pointer envelope border border-pink-200 transform-gpu">
+          <!-- frente tipo sobre (cuadro con "Abrir") -->
+          <div id="envelope-front" class="flex flex-col items-center justify-center gap-4">
+            <div class="text-2xl font-semibold text-rosa">Abrir 💌</div>
+            <div class="text-sm text-gray-500">Toca aquí para leer mi carta</div>
+            <div class="mt-4 flex gap-3">
+              <span class="inline-block w-3 h-3 rounded-full bg-rosa animate-pulse"></span>
+              <span class="inline-block w-3 h-3 rounded-full bg-accent animate-pulse delay-75"></span>
+              <span class="inline-block w-3 h-3 rounded-full bg-morado animate-pulse delay-150"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CARTA (aparece con scroll interno y contenido) -->
+    <div id="carta" class="mt-6 hidden mx-auto w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-6 border border-pink-100"
+         style="height:520px; overflow-y:auto;">
+      <!-- inside header -->
+      <div class="flex items-start gap-4">
+        <div class="w-36 h-36 shrink-0 rounded-xl overflow-hidden border border-pink-200 shadow">
+          <!-- Carousel images -->
+          <div class="relative w-full h-full bg-gray-100">
+            <img id="carousel-img" src="{{ url_for('static', filename='img/foto1.jpg') }}" alt="foto"
+                 class="w-full h-full object-cover" />
+            <!-- controls -->
+            <button id="prev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:scale-105 transition">
+             
+            </button>
+            <button id="next" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow hover:scale-105 transition">
+            
+            </button>
+          </div>
+        </div>
+
+        <div class="flex-1 text-left">
+          <h2 class="text-2xl font-semibold text-rosa">Mi amor…</h2>
+          <p class="text-sm text-gray-500 mt-1">Lee con calma </p>
+          <!-- small progress bar -->
+          <div id="progressWrap" class="mt-4">
+            <div class="w-full bg-pink-50 rounded-full h-2">
+              <div id="progress" class="bg-rosa h-2 rounded-full w-0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      Quiero pedirte perdón desde lo más profundo de mi corazón.
+Sé que cometí errores, sé que te lastimé, y créeme que es lo último que hubiera querido hacer.
+A veces uno no mide lo que dice o hace, y después se da cuenta de cuánto daño puede provocar en la persona que más ama.
+
+Recuerdo cada sonrisa que me regalaste, cada abrazo en el que sentí que el mundo se detenía. Justo por eso me duele aún más haber fallado. Porque tú eres mi lugar seguro, mi paz, mi alegría.
+
+No busco justificarme.
+Solo quiero que sepas que estoy aquí, dispuesto a mejorar, a aprender, a cambiar, a escucharte,
+y sobre todo: a demostrarte con hechos que lo nuestro vale cada esfuerzo.
+
+No soy perfecto, lo sé. Pero quiero ser alguien que merezca tu amor, alguien que cuida lo que tiene,
+no alguien que lo rompe por descuido.
+
+Te amo más de lo que mis palabras pueden expresar. Y si me das la oportunidad… quiero seguir construyendo un futuro contigo. ❤️
+
+Y quizá no sé cómo pedirte perdón de la manera perfecta…
+por eso recurro a lo que mejor sé hacer: PROGRAMAR,
+con la esperanza de que cada línea de este detalle te transmita lo mucho que significas para mí.
+
+Si llegaste hasta aquí: gracias por leer. ❤️
+
+  <!-- Sorpresa: modal al final -->
+  <div id="modal" class="fixed inset-0 hidden items-center justify-center z-40">
+    <div class="overlay absolute inset-0"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl p-8 z-50 max-w-lg text-center">
+      <h3 class="text-2xl font-bold text-rosa mb-3">Gracias por leer</h3>
+      <p class="text-gray-700 mb-6">Si me das otra oportunidad, prometo cuidarte con todo mi esfuerzo.</p>
+      <button id="btn-cerrar" class="px-6 py-3 bg-rosa text-white rounded-lg shadow hover:scale-105 transition">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    // Pasamos assets list al JS (opcional)
+    window.__PAGE_ASSETS = {
+      images: [
+        "{{ url_for('static', filename='img/foto1.jpg') }}",
+        "{{ url_for('static', filename='img/foto2.jpg') }}",
+        "{{ url_for('static', filename='img/foto3.jpg') }}"
+      ],
+      texto: `Quiero pedirte perdón desde lo más profundo de mi corazón.
+Sé que cometí errores, sé que te lastimé, y créeme que es lo último que hubiera querido hacer.
+A veces uno no mide lo que dice o hace, y después se da cuenta de cuánto daño puede provocar en la persona que más ama.
+
+Recuerdo cada sonrisa que me regalaste, cada abrazo en el que sentí que el mundo se detenía. Justo por eso me duele aún más haber fallado. Porque tú eres mi lugar seguro, mi paz, mi alegría.
+
+No busco justificarme.
+Solo quiero que sepas que estoy aquí, dispuesto a mejorar, a aprender, a cambiar, a escucharte,
+y sobre todo: a demostrarte con hechos que lo nuestro vale cada esfuerzo.
+
+No soy perfecto, lo sé. Pero quiero ser alguien que merezca tu amor, alguien que cuida lo que tiene,
+no alguien que lo rompe por descuido.
+
+Te amo más de lo que mis palabras pueden expresar. Y si me das la oportunidad… quiero seguir construyendo un futuro contigo. ❤️
+
+Y quizá no sé cómo pedirte perdón de la manera perfecta…
+por eso recurro a lo que mejor sé hacer: PROGRAMAR,
+con la esperanza de que cada línea de este detalle te transmita lo mucho que significas para mí.
+
+Si llegaste hasta aquí: gracias por leer. ❤️`
+    };
+  </script>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
